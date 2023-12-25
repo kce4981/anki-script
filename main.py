@@ -8,7 +8,7 @@ FULLTEXT = root / 'fulltext'
 EXPLAIN = root / 'explain'
 OUTPUT = root / 'out.csv'
 
-TOPIC = "論語"
+TOPIC = "馮諼客孟嘗君"
 
 explanatory = load_explanatory(EXPLAIN)
 fulltext = load_fulltext(FULLTEXT)
@@ -22,7 +22,7 @@ for _ in range(int(height*0.5)):
 
 fp = open(OUTPUT, mode='a', encoding='utf-8', buffering=1)
 
-for hd, exp in explanatory.items():
+for i, (hd, exp) in enumerate(explanatory.items()):
     extra = ''
     jump_flag = False
     exit_flag = False
@@ -35,6 +35,7 @@ for hd, exp in explanatory.items():
         for _ in range(height):
             print(" "*width)
         quota = get_text(fulltext, hd, rng, ocurs[idx])
+
         create_card_view(TOPIC, quota, exp)
         pack = (nont, rng, extra, jump_flag)
 

@@ -7,7 +7,10 @@ def load_explanatory(file) -> dict:
     fp = open(file, mode='r', encoding='utf-8')
 
     for line in fp:
-        idx = line.index(SEPERATOR)
+        try:
+            idx = line.index(SEPERATOR)
+        except ValueError:
+            print(f'ERROR at line : {line}')
         exp[line[:idx]] = line[idx+1:].replace("\n", "")
     fp.close()
     return exp
@@ -25,7 +28,11 @@ def load_fulltext(file) -> str:
     return ''.join(buffer)
 
 def get_text(fulltext, word: str, rang: tuple[int], ocur: int):
-    idx = fulltext.index(word, ocur)
+    try:
+        idx = fulltext.index(word, ocur)
+    except ValueError:
+        res = ("NOT FOUND","","")
+        return res
     ln = len(word)
 
     left = max(0, idx-rang[0])
