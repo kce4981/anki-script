@@ -1,8 +1,9 @@
 import shutil
+from enum import Enum
 def load_explanatory(file) -> dict:
 
     SEPERATOR = "："
-    exp = {} 
+    exp = [] 
 
     fp = open(file, mode='r', encoding='utf-8')
 
@@ -11,7 +12,8 @@ def load_explanatory(file) -> dict:
             idx = line.index(SEPERATOR)
         except ValueError:
             print(f'ERROR at line : {line}')
-        exp[line[:idx]] = line[idx+1:].replace("\n", "")
+        pack = (line[:idx], line[idx+1:].replace("\n", ""))
+        exp.append(pack)
     fp.close()
     return exp
         
@@ -54,41 +56,108 @@ def get_ocur(fulltext, word):
     return ocurs
 
 def create_card_view(topic, text: tuple, explain):
-    width, height = shutil.get_terminal_size()
+    import shutil
+    width = shutil.get_terminal_size()[0]
     l,m,r = text
 
+    payload = []
+    payload.append(topic)
+    payload.append(f'{l}「{m}」{r}'.center(width))
+    payload.append(explain.center(width))
+    payload.append('-'*width)
 
-    print(topic)
-    print(f'{l}「{m}」{r}'.center(width))
-    print(explain.center(width))
-    print('-'*width)
+    printScreen(payload)
 
-def process_user_input(nont, rng, extra, jump_flag):
+def process_input(**info):
     resp = input()
-    status = False
-    if resp == '':
-        status = True
+    status = Status.ADJUST
+
+    notation = 1
 
     if resp.startswith('l'):
         if resp.startswith('l-'):
-            nont = -1 
-        rng[1] += int(resp[2:])*nont
+            notation = -1 
+        info['rng'][1] += int(resp[2:])*notation
 
     if resp.startswith('r'):
         if resp.startswith('r-'):
-            nont = -1 
-        rng[0] += int(resp[2:])*nont
+            notation = -1 
+        info['rng'][0] += int(resp[2:])*notation
 
     if resp.startswith('extra'):
-        extra = resp[5:]
+        info['extra'] = resp[5:]
+
+    if resp.startswith('next'):
+        info['idx'] += 1
+
+    if resp == '':
+        status = Status.NEXT
 
     if resp.startswith('jump'):
-        jump_flag = True
-        status = True
+        status = Status.SKIP
 
     if resp.startswith('exit'):
-        status = None
+        status = Status.EXIT
+
+    if resp.startswith('f'):
+        status = Status.ADJUST
+        findNextComma(1, **info)
+
+    if resp.startswith('p'):
+        status = Status.ADJUST
+        findNextComma(-1, **info)
+
+    return status, info
+
+def printScreen(lines: list[str]) -> None:
+    import shutil
+    height = shutil.get_terminal_size()[1]
+    whitespc = (height - len(lines))//2 
+
+    for _ in range(whitespc):
+        print()
+
+    for ln in lines:
+        print(ln)
+
+    for _ in range(whitespc, whitespc*2):
+        print()
+
+def getHash(string):
+    import hashlib
+    return hashlib.sha256(string.encode('utf-8')).hexdigest()
+
+def findNextComma(direction, **info):
+    candidates = ["，", "；", "。", "、", "？", "！"]
+    fulltext = info['fulltext']
+    if direction > 0:
+        idx = info['position'] + info['rng'][1]
+    if direction < 0:
+        idx = info['position'] - info['rng'][0]
+    ln = len(fulltext)
+    while True:
+        idx += direction
+        if idx >= ln:
+            info['rng'][1] = ln-1 
+            return info
+
+        if idx < 0:
+            info['rng'][0] = 0
+            return info
+
+        if fulltext[idx] in candidates:
+            if direction > 0:
+                info['rng'][1] = idx - info['position'] + 1
+
+            if direction < 0:
+                info['rng'][0] = info['position'] - idx  
+
+            return info
 
 
-    pack = nont, rng, extra, jump_flag, status
-    return pack
+class Status(Enum):
+    START = 0
+    NEXT = 1
+    ADJUST = 2
+    EXIT = 3
+    SKIP = 4

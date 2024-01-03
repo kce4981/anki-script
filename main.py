@@ -1,59 +1,70 @@
 from carding import *
-import shutil
 from parse import *
 import pathlib
+import shutil
+import hashlib
 
 root = pathlib.Path(__file__).parents[0]
 FULLTEXT = root / 'fulltext'
-EXPLAIN = root / 'explain'
+EXPLAIN = root / 'explain.md'
 OUTPUT = root / 'out.csv'
+DATA =  root / 'data' / 'processed_hashes'
 
-TOPIC = "馮諼客孟嘗君"
+TOPIC = "勞山道士"
+
+check = True
 
 explanatory = load_explanatory(EXPLAIN)
 fulltext = load_fulltext(FULLTEXT)
+DATA.parents[0].mkdir(parents=True, exist_ok=True)
+if not DATA.exists():
+    open(DATA, mode='w').close()
+hash_file = open(DATA, mode='r+', encoding='utf-8', buffering=1)
+hash_data = hash_file.read().splitlines()
 
-print(fulltext)
-
-width, height = shutil.get_terminal_size()
-
-for _ in range(int(height*0.5)):
-    print(" "*width)
+if check:
+    failed_lines = []
+    for exp, _ in explanatory:
+        if exp not in fulltext:
+            failed_lines.append(f'FAILED, {exp}')
+    if len(failed_lines) > 0:
+        printScreen(failed_lines)
+        input()
 
 fp = open(OUTPUT, mode='a', encoding='utf-8', buffering=1)
 
-for i, (hd, exp) in enumerate(explanatory.items()):
-    extra = ''
-    jump_flag = False
-    exit_flag = False
+for i, (hd, exp) in enumerate(explanatory):
     ocurs = get_ocur(fulltext, hd)
-    idx = 0
-    rng = [8,8]
+    if getHash(exp) in hash_data:
+        print(f'{exp} exists, skipping')
+        continue
 
-    while(True):
-        nont = 1
-        for _ in range(height):
-            print(" "*width)
-        quota = get_text(fulltext, hd, rng, ocurs[idx])
+    # ?
+    info = {}
+    info['fulltext'] = fulltext
+    info['hd'] = hd
+    info['rng'] = [8,8]
+    info['ocur'] = ocurs[0]
+    info['idx'] = 0
+    info['extra'] = ''
+    status = Status.ADJUST 
+
+    while(status == Status.ADJUST):
+        info['position'] = fulltext.index(hd, info['ocur'])
+        idx = info['idx'] % len(ocurs)
+        quota = get_text(fulltext, hd, info['rng'], ocurs[idx])
 
         create_card_view(TOPIC, quota, exp)
-        pack = (nont, rng, extra, jump_flag)
 
-        nont, rng, extra, jump_flag, ctnu = process_user_input(*pack)
+        status, info = process_input(**info)
 
-        if ctnu is None:
-            exit_flag = True
-            break
 
-        if ctnu:
-            break
-           
-
-    print(jump_flag)
-
-    if exit_flag:
+    if status == Status.EXIT:
         break
-    if not jump_flag:
-        fp.write(f'{TOPIC},{quota[0]},{quota[1]},{quota[2]},{exp},{extra}\n')
+    if status == Status.NEXT:
+        fp.write(f'{TOPIC},{quota[0]},{quota[1]},{quota[2]},{exp},{info["extra"]}\n')
+        print(getHash(exp), file=hash_file)
+        hash_data.append(getHash(exp))
 
 fp.close()
+hash_file.close()

@@ -3,3 +3,6 @@ archive/*
 explain
 fulltext
 out
+out.*
+explain
+explain.*
