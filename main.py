@@ -10,7 +10,7 @@ EXPLAIN = root / 'explain.md'
 OUTPUT = root / 'out.csv'
 DATA =  root / 'data' / 'processed_hashes'
 
-TOPIC = "勞山道士"
+TOPIC = "論語"
 
 check = True
 
@@ -54,7 +54,9 @@ for i, (hd, exp) in enumerate(explanatory):
         idx = info['idx'] % len(ocurs)
         quota = get_text(fulltext, hd, info['rng'], ocurs[idx])
 
-        create_card_view(TOPIC, quota, exp)
+        countdown = f'({i}/{len(explanatory)})'
+
+        create_card_view(TOPIC + countdown, quota, exp)
 
         status, info = process_input(**info)
 
