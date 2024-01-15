@@ -5,20 +5,22 @@ diction = {
         "o":"",
         "e":"",
         "「":"",
-        "」":""
+        "」":"",
+        "于":"於" # 破爛簡繁轉換，于根本不通繁體
+        
 }
 def parse(token):
     if token == "\n":
         return
 
-    for rep in diction:
+    for rep in diction.items():
         token = token.replace(*rep)
 
     return token
 
 def load_parse():
 
-    with open("./target", mode='r', encoding='utf-8') as fp:
+    with open("./explain.md", mode='r', encoding='utf-8') as fp:
         buffer = []
         for line in fp:
             out = parse(line)
