@@ -10,7 +10,7 @@ EXPLAIN = root / 'explain.md'
 OUTPUT = root / 'out.csv'
 DATA =  root / 'data' / 'processed_hashes'
 
-TOPIC = "論語"
+TOPIC = "勸和論"
 
 check = True
 
